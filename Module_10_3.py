@@ -2,6 +2,7 @@ import threading
 import random
 import time
 
+
 class Bank:
     def __init__(self):
         """
@@ -18,13 +19,18 @@ class Bank:
         """
         for _ in range(100):  # Цикл для 100 транзакций
             amount = random.randint(50, 500)  # Генерируем случайное число от 50 до 500
-            with self.lock:  # Блокируем доступ к ресурсу
+
+            self.lock.acquire()  # Блокируем доступ к ресурсу
+            try:
                 self.balance += amount  # Увеличиваем баланс
                 print(f"Пополнение: {amount}. Баланс: {self.balance}")  # Выводим информацию о пополнении
 
-            # Проверяем, если баланс больше или равен 500 и замок заблокирован
-            if self.balance >= 500 and self.lock.locked():
-                self.lock.release()  # Разблокируем замок
+                # Проверяем, если баланс больше или равен 500
+                if self.balance >= 500:
+                    print("Баланс достиг 500 или более, разблокировка.")
+                    self.lock.release()  # Разблокируем замок, если необходимо
+            finally:
+                self.lock.release()  # Всегда разблокируем замок
 
             time.sleep(0.001)  # Ожидание в 0.001 секунды
 
@@ -35,17 +41,22 @@ class Bank:
         """
         for _ in range(100):  # Цикл для 100 транзакций
             amount = random.randint(50, 500)  # Генерируем случайное число от 50 до 500
+
             print(f"Запрос на {amount}")  # Выводим запрос на снятие
 
-            with self.lock:  # Блокируем доступ к ресурсу
+            self.lock.acquire()  # Блокируем доступ к ресурсу
+            try:
                 if amount <= self.balance:  # Проверяем, достаточно ли средств на балансе
                     self.balance -= amount  # Уменьшаем баланс
                     print(f"Снятие: {amount}. Баланс: {self.balance}")  # Выводим информацию о снятии
                 else:
                     print("Запрос отклонён, недостаточно средств")  # Сообщаем об отказе в снятии
-                    self.lock.acquire()  # Блокируем поток, так как недостаточно средств
+                    # Здесь можно добавить логику для ожидания или повторного запроса
+            finally:
+                self.lock.release()  # Всегда разблокируем замок
 
             time.sleep(0.001)  # Ожидание в 0.001 секунды
+
 
 # Создаем объект класса Bank
 bk = Bank()
